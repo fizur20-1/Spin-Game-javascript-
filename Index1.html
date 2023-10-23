@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Slot Machine Game</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --button-hover-color: #45a049;
+        }
+
+        body {
+            background-color: #f4f4f4;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .container {
+            text-align: center;
+            background-color: #fff;
+            border-radius: 5px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            font-size: 24px;
+            color: #333;
+        }
+
+        p {
+            font-size: 18px;
+            color: #666;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: var(--primary-color);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--button-hover-color);
+        }
+
+        #result {
+            font-weight: bold;
+            font-size: 20px;
+            color: var(--primary-color);
+            margin-top: 20px;
+        }
+
+        #reels {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        #reels img {
+            width: 100px;
+            height: 100px;
+            margin: 10px;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #playAgainButton {
+            display: none;
+            background-color: var(--primary-color);
+        }
+
+        #playAgainButton:hover {
+            background-color: var(--button-hover-color);
+        }
+
+        #playAgainButton:active {
+            background-color: #006785;
+        }
+
+        #playAgainButton {
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            padding: 10px 20px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        form div {
+            margin: 10px 0;
+        }
+
+        label {
+            font-size: 16px;
+            display: inline-block;
+            width: 200px;
+            text-align: right;
+            margin-right: 10px;
+        }
+
+        input {
+            font-size: 16px;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Slot Machine Game</h1>
+        <p>Your balance is: $<span id="balance">0</span></p>
+        <p>Spins left: <span id="spinsLeft">10</span></p>
+        <form id="inputForm">
+            <div>
+                <label for="depositAmount">Enter deposit amount:</label>
+                <input type="number" id="depositAmount" name="depositAmount" required>
+            </div>
+            <div>
+                <label for="numberOfLines">Enter number of lines (1-3):</label>
+                <input type="number" id="numberOfLines" name="numberOfLines" required>
+            </div>
+            <div>
+                <label for="betAmount">Enter bet amount per line:</label>
+                <input type="number" id="betAmount" name="betAmount" required>
+            </div>
+            <button type="submit">Deposit & Play</button>
+        </form>
+        <button id="spinButton" style="display: none;">Spin</button>
+        <p id="result"></p>
+        <div id="reels" style="display: none;"></div>
+        <button id="playAgainButton" style="display: none;">Play Again</button>
+    </div>
+    <script>
+        const Rows = 3;
+        const Columns = 3;
+        const SYMBOLS_COUNT = {
+            A: 2,
+            B: 4,
+            C: 6,
+            D: 8
+        };
+        const SYMBOLS_VALUES = {
+            A: 5,
+            B: 4,
+            C: 6,
+            D: 8
+        };
+
+        let balance = 0;
+        let playing = false;
+
+        function deposit() {
+            const depositAmount = parseFloat(document.querySelector('[name="depositAmount"]').value);
+            balance += depositAmount;
+            document.getElementById("balance").textContent = `$${balance}`;
+        }
+
+        function getNumberOfLines() {
+            return parseFloat(document.querySelector('[name="numberOfLines"]').value);
+        }
+
+        function getBet(balance, lines) {
+            return parseFloat(document.querySelector('[name="betAmount"]').value);
+        }
+
+        function spin() {
+            const symbols = [];
+            for (const [symbol, count] of Object.entries(SYMBOLS_COUNT)) {
+                for (let i = 0; i < count; i++) {
+                    symbols.push(symbol);
+                }
+            }
+
+            const reels = [];
+            for (let i = 0; i < Columns; i++) {
+                reels.push([]);
+                const reelSymbols = [...symbols];
+                for (let j = 0; j < Rows; j++) {
+                    const randomIndex = Math.floor(Math.random() * reelSymbols.length);
+                    const selectedSymbol = reelSymbols[randomIndex];
+                    reels[i].push(selectedSymbol);
+                    reelSymbols.splice(randomIndex, 1);
+                }
+            }
+            return reels;
+        }
+
+        function transpose(reels) {
+            const rows = [];
+            for (let i = 0; i < Rows; i++) {
+                rows.push([]);
+                for (let j = 0; j < Columns; j++) {
+                    rows[i].push(reels[j][i]);
+                }
+            }
+            return rows;
+        }
+
+        function printRows(rows) {
+            let resultString = "";
+            for (const row of rows) {
+                let rowString = "";
+                for (const [i, symbol] of row.entries()) {
+                    rowString += symbol;
+                    if (i !== row.length - 1) {
+                        rowString += " | ";
+                    }
+                }
+                resultString += rowString + "<br>";
+            }
+            document.getElementById("reels").innerHTML = resultString;
+        }
+
+        function getWinnings(rows, bet, lines) {
+            let winnings = 0;
+            for (let row = 0; row < lines; row++) {
+                const symbols = rows[row];
+                let allSame = true;
+                for (const symbol of symbols) {
+                    if (symbol !== symbols[0]) {
+                        allSame = false;
+                        break;
+                    }
+                }
+                if (allSame) {
+                    winnings += bet * SYMBOLS_VALUES[symbols[0]];
+                }
+            }
+            return winnings;
+        }
+
+        const inputForm = document.getElementById("inputForm");
+        const spinButton = document.getElementById("spinButton");
+        const resultElement = document.getElementById("result");
+        const reelsElement = document.getElementById("reels");
+        const playAgainButton = document.getElementById("playAgainButton");
+        const spinsLeftElement = document.getElementById("spinsLeft");
+
+        let spinsLeft = 10;
+
+        function updateSpinsLeft() {
+            spinsLeftElement.textContent = spinsLeft;
+        }
+
+        function canSpin() {
+            return spinsLeft > 0 && balance > 0;
+        }
+
+        inputForm.addEventListener("submit", function (e) {
+            e.preventDefault();
+            deposit();
+            spinButton.style.display = "block";
+            inputForm.style.display = "none";
+            reelsElement.style.display = "block";
+            playAgainButton.style.display = "none";
+            playing = true;
+            updateSpinsLeft();
+        });
+
+        // spinButton.addEventListener("click", () => {
+        //     if (canSpin()) {
+        //         const numberOfLines = getNumberOfLines();
+        //         const bet = getBet(balance, numberOfLines);
+        //         balance -= bet * numberOfLines;
+        //         spinsLeft--;
+        //         updateSpinsLeft();
+        //         if (balance >= 0) {
+        //             const reels = spin();
+        //             const rows = transpose(reels);
+        //             printRows(rows);
+        //             const winnings = getWinnings(rows, bet, numberOfLines);
+        //             balance += winnings;
+        //             document.getElementById("balance").textContent = `$${balance}`;
+        //             resultElement.textContent = `You won $${winnings}`;
+        //             if (balance <= 0) {
+        //                 resultElement.textContent = "Oh no! You've gone broke!";
+        //                 spinButton.style.display = "none";
+        //                 playAgainButton.style.display = "block";
+        //             }
+        //         } else {
+        //             resultElement.textContent = "Insufficient balance. Please deposit more.";
+        //             spinButton.style.display = "none";
+        //             playAgainButton.style.display = "block"; // Fix the typo
+        //         }
+        //     }
+        // });
+
+        spinButton.addEventListener("click", () => {
+    if (canSpin()) {
+        const numberOfLines = getNumberOfLines();
+        const bet = getBet(balance, numberOfLines);
+        balance -= bet * numberOfLines;
+        spinsLeft--;
+        updateSpinsLeft();
+        if (balance >= 0) {
+            const reels = spin();
+            const rows = transpose(reels);
+            printRows(rows);
+            const winnings = getWinnings(rows, bet, numberOfLines);
+            balance += winnings;
+            document.getElementById("balance").textContent = `$${balance}`;
+            resultElement.textContent = `You won $${winnings}`;
+            if (balance <= 0) {
+                resultElement.textContent = "Oh no! You've gone broke!";
+                spinButton.style.display = "none";
+                playAgainButton.style.display = "block";
+            } else if (spinsLeft === 0) {
+                // Show the "Play Again" button if there are no more spins
+                playAgainButton.style.display = "block";
+            }
+        } else {
+            resultElement.textContent = "Insufficient balance. Please deposit more.";
+            spinButton.style.display = "none";
+            playAgainButton.style.display = "block";
+        }
+    }
+});
+
+        // playAgainButton.addEventListener("click", () => {
+        //     playAgainButton.style.display = "none";
+        //     if (spinsLeft === 0 || (balance <= 0 && spinsLeft > 0)) {
+        //         balance = 0;
+        //         deposit();
+        //         inputForm.style.display = "block";
+        //         reelsElement.style.display = "none";
+        //         resultElement.textContent = "";
+        //         spinsLeft = 10;
+        //         updateSpinsLeft();
+        //         playing = false;
+        //     }
+        //     // Ask for Play Again if spins are 0
+        //     if (spinsLeft === 0) {
+        //         const playAgain = confirm("You're out of spins. Do you want to play again?");
+        //         if (playAgain) {
+        //             deposit();
+        //             inputForm.style.display = "block";
+        //             updateSpinsLeft();
+        //         }
+        //     }
+        // });
+        playAgainButton.addEventListener("click", () => {
+    playAgainButton.style.display = "none";
+    if (spinsLeft === 0 || (balance <= 0 && spinsLeft > 0)) {
+        balance = 0;
+        deposit();
+        inputForm.style.display = "block";
+        reelsElement.style.display = "none";
+        resultElement.textContent = "";
+        spinsLeft = 10;
+        updateSpinsLeft();
+        playing = false;
+    } else if (spinsLeft === 0 && balance > 0) {
+        const playAgain = confirm("You're out of spins. Do you want to play again?");
+        if (playAgain) {
+            deposit();
+            inputForm.style.display = "block";
+            updateSpinsLeft();
+            spinButton.style.display = "block"; // Show the spin button when playing again
+        }
+    }
+});
+
+
+
+
+    </script>
+</body>
+</html>
