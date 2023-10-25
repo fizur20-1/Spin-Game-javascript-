@@ -125,6 +125,7 @@
     </style>
 </head>
 <body>
+    
     <div class="container">
         <h1>Slot Machine Game</h1>
         <p>Your balance is: $<span id="balance">0</span></p>
@@ -150,6 +151,8 @@
         <button id="playAgainButton" style="display: none;">Play Again</button>
     </div>
     <script>
+              
+
         const Rows = 3;
         const Columns = 3;
         const SYMBOLS_COUNT = {
@@ -164,14 +167,15 @@
             C: 6,
             D: 8
         };
-
         let balance = 0;
         let playing = false;
 
         function deposit() {
+            
             const depositAmount = parseFloat(document.querySelector('[name="depositAmount"]').value);
-            balance += depositAmount;
+            balance = depositAmount;
             document.getElementById("balance").textContent = `$${balance}`;
+           
         }
 
         function getNumberOfLines() {
@@ -325,6 +329,7 @@
                 playAgainButton.style.display = "block";
             } else if (spinsLeft === 0) {
                 // Show the "Play Again" button if there are no more spins
+                spinButton.style.display = "none";
                 playAgainButton.style.display = "block";
             }
         } else {
@@ -332,8 +337,13 @@
             spinButton.style.display = "none";
             playAgainButton.style.display = "block";
         }
+    } else {
+        resultElement.textContent = "Cannot spin. Please deposit more or check the number of lines and bet amount.";
+        spinButton.style.display = "none";
+        playAgainButton.style.display = "block";
     }
 });
+
 
         // playAgainButton.addEventListener("click", () => {
         //     playAgainButton.style.display = "none";
@@ -357,10 +367,19 @@
         //         }
         //     }
         // });
+
         playAgainButton.addEventListener("click", () => {
+            
+
     playAgainButton.style.display = "none";
+    balance = 0;
+        document.getElementById("balance").textContent = "$0";
+        document.querySelector('[name="depositAmount"]').value = "";
+        document.querySelector('[name="numberOfLines"]').value = "";
+        document.querySelector('[name="betAmount"]').value = "";
     if (spinsLeft === 0 || (balance <= 0 && spinsLeft > 0)) {
-        balance = 0;
+     
+        
         deposit();
         inputForm.style.display = "block";
         reelsElement.style.display = "none";
@@ -371,15 +390,23 @@
     } else if (spinsLeft === 0 && balance > 0) {
         const playAgain = confirm("You're out of spins. Do you want to play again?");
         if (playAgain) {
+         
             deposit();
             inputForm.style.display = "block";
             updateSpinsLeft();
             spinButton.style.display = "block"; // Show the spin button when playing again
         }
+    } else {
+        // Add your "Play Again" handling when there are spins left and balance is greater than 0
+       // balance = 0;
+
+        deposit();
+        inputForm.style.display = "block";
+       // spinButton.style.display = "block";
+        updateSpinsLeft();
+        spinButton.style.display = "block";
     }
 });
-
-
 
 
     </script>
